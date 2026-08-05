@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eatGrow — nutrition you can afford, near you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBFAF6;
+    --surface:#FFFFFF;
+    --surface-2:#F3F1E9;
+    --ink:#1B2A22;
+    --muted:#647568;
+    --primary:#2F6B4F;
+    --primary-dark:#1F4A36;
+    --accent:#8BC53F;
+    --accent-dark:#6FA02C;
+    --tag:#E8813D;
+    --tag-dark:#C96A2C;
+    --border:#E3E2D6;
+    --radius:16px;
+    --shadow:0 2px 10px rgba(27,42,34,0.07);
+    --shadow-lg:0 12px 32px rgba(27,42,34,0.14);
+    --font-display:'Fraunces', serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:var(--font-display); margin:0; font-weight:600;}
+  a{color:inherit;}
+  button{font-family:var(--font-body); cursor:pointer;}
+  ::selection{background:var(--accent); color:var(--primary-dark);}
+
+  /* ---------- Login modal ---------- */
+  #loginOverlay{
+    position:fixed; inset:0; background:rgba(27,42,34,0.55);
+    display:flex; align-items:center; justify-content:center;
+    z-index:100; padding:20px;
+  }
+  #loginCard{
+    background:var(--surface); border-radius:20px; padding:36px 32px;
+    width:100%; max-width:380px; box-shadow:var(--shadow-lg);
+    text-align:center; position:relative;
+  }
+  #loginCard .leaf{font-size:34px; display:block; margin-bottom:6px;}
+  #loginCard h2{font-size:26px; margin-bottom:4px;}
+  #loginCard p{color:var(--muted); font-size:14px; margin:0 0 22px;}
+  #loginCard input{
+    width:100%; padding:12px 14px; margin-bottom:12px; border-radius:10px;
+    border:1.5px solid var(--border); font-family:var(--font-body); font-size:14px;
+    background:var(--surface-2);
+  }
+  #loginCard input:focus{outline:2px solid var(--accent); border-color:var(--accent);}
+  #loginCard button{
+    width:100%; padding:13px; border:none; border-radius:10px;
+    background:var(--primary); color:#fff; font-weight:600; font-size:15px;
+    margin-top:6px; transition:background .15s ease;
+  }
+  #loginCard button:hover{background:var(--primary-dark);}
+  #loginSkip{
+    display:block; margin-top:14px; font-size:13px; color:var(--muted);
+    text-decoration:underline; background:none; border:none; cursor:pointer;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    position:sticky; top:0; z-index:20; background:var(--surface);
+    border-bottom:1px solid var(--border);
+  }
+  .header-inner{
+    max-width:1240px; margin:0 auto; padding:16px 24px;
+    display:flex; align-items:center; gap:24px; flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{
+    width:38px; height:38px; border-radius:10px; background:var(--primary);
+    display:flex; align-items:center; justify-content:center; font-size:19px;
+    flex-shrink:0;
+  }
+  .brand-text h1{font-size:22px; font-style:italic; color:var(--primary-dark); letter-spacing:-0.02em;}
+  .brand-text span{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.09em;}
+  .header-search{flex:1; min-width:220px; position:relative;}
+  .header-search input{
+    width:100%; padding:11px 16px 11px 40px; border-radius:999px;
+    border:1.5px solid var(--border); background:var(--surface-2); font-size:14px;
+  }
+  .header-search input:focus{outline:none; border-color:var(--accent);}
+  .header-search::before{
+    content:"⌕"; position:absolute; left:15px; top:50%; transform:translateY(-50%);
+    color:var(--muted); font-size:17px; font-weight:700;
+  }
+  #userGreet{font-size:13px; color:var(--muted); white-space:nowrap;}
+  #userGreet b{color:var(--ink);}
+
+  /* ---------- Layout ---------- */
+  main{max-width:1240px; margin:0 auto; padding:24px; display:flex; gap:24px; align-items:flex-start;}
+  .filters{
+    width:270px; flex-shrink:0; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:22px; box-shadow:var(--shadow);
+    position:sticky; top:88px;
+  }
+  .filters h3{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:16px; font-family:var(--font-body); font-weight:700;}
+  .field{margin-bottom:18px;}
+  .field label{display:block; font-size:12.5px; font-weight:600; margin-bottom:6px; color:var(--ink);}
+  .field select, .field input[type=number]{
+    width:100%; padding:9px 10px; border-radius:8px; border:1.5px solid var(--border);
+    background:var(--surface-2); font-size:13.5px; font-family:var(--font-body);
+  }
+  .range-row{display:flex; gap:8px; align-items:center;}
+  .range-row input{width:100%;}
+  .range-row span{color:var(--muted); font-size:12px;}
+  .segmented{display:flex; border:1.5px solid var(--border); border-radius:10px; overflow:hidden;}
+  .segmented button{
+    flex:1; padding:8px 4px; border:none; background:var(--surface-2); font-size:12.5px;
+    font-weight:600; color:var(--muted); transition:.15s;
+  }
+  .segmented button.active{background:var(--primary); color:#fff;}
+  input[type=range]{width:100%; accent-color:var(--primary);}
+  .slider-val{font-family:var(--font-mono); font-size:12px; color:var(--primary-dark); font-weight:600;}
+  #resetFilters{
+    width:100%; padding:10px; border-radius:8px; border:1.5px solid var(--border);
+    background:none; color:var(--muted); font-size:12.5px; font-weight:600; margin-top:4px;
+  }
+  #resetFilters:hover{border-color:var(--tag); color:var(--tag-dark);}
+
+  .results{flex:1; min-width:0;}
+  .results-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px;}
+  .results-head h2{font-size:20px;}
+  .results-head .count{font-size:13px; color:var(--muted); font-family:var(--font-mono);}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:18px;}
+
+  /* ---------- Product card (signature: price-tag + nutrition strip) ---------- */
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px; box-shadow:var(--shadow); position:relative; display:flex; flex-direction:column; gap:10px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .card:hover{transform:translateY(-3px); box-shadow:var(--shadow-lg);}
+  .card-top{display:flex; align-items:flex-start; justify-content:space-between; gap:8px;}
+  .card-icon{font-size:32px; line-height:1;}
+  .card-cat{
+    font-size:10px; text-transform:uppercase; letter-spacing:.07em; font-weight:700;
+    padding:3px 8px; border-radius:999px; background:var(--surface-2); color:var(--muted);
+  }
+  .card-cat.fruit{background:#FBE9DC; color:var(--tag-dark);}
+  .card-cat.veg{background:#E7F1DE; color:var(--primary-dark);}
+  .card h3{font-size:17px; margin-top:2px;}
+  .card .tagline{font-size:12px; color:var(--muted); margin-top:-4px;}
+
+  .nutri-strip{display:flex; flex-direction:column; gap:6px; margin:2px 0;}
+  .nutri-row{display:flex; align-items:center; gap:8px; font-size:11px; font-family:var(--font-mono); color:var(--muted);}
+  .nutri-row .label{width:38px; flex-shrink:0; font-weight:600;}
+  .nutri-bar{flex:1; height:6px; border-radius:4px; background:var(--surface-2); overflow:hidden;}
+  .nutri-bar > i{display:block; height:100%; border-radius:4px;}
+  .nutri-bar.protein > i{background:var(--primary);}
+  .nutri-bar.cal > i{background:var(--tag);}
+  .nutri-row .val{width:52px; text-align:right; flex-shrink:0; color:var(--ink); font-weight:600;}
+
+  .price-tag{
+    align-self:flex-start; position:relative; margin-top:2px;
+    background:var(--surface-2); border:1.5px dashed var(--border); border-radius:8px;
+    padding:6px 12px 6px 20px; transform:rotate(-1deg); font-family:var(--font-mono);
+  }
+  .price-tag::before{
+    content:""; position:absolute; left:7px; top:50%; transform:translateY(-50%);
+    width:6px; height:6px; border-radius:50%; background:var(--bg); border:1.5px solid var(--border);
+  }
+  .price-tag .amount{font-size:16px; font-weight:600; color:var(--primary-dark);}
+  .price-tag .unit{font-size:10px; color:var(--muted);}
+  .avail{font-size:11.5px; color:var(--muted);}
+  .avail b{color:var(--ink);}
+
+  .card-actions{display:flex; gap:8px; margin-top:auto; padding-top:6px;}
+  .card-actions button{
+    flex:1; padding:8px 6px; border-radius:8px; border:1.5px solid var(--border);
+    background:none; font-size:11.5px; font-weight:600; color:var(--primary-dark);
+  }
+  .card-actions button:hover{background:var(--surface-2);}
+
+  .shop-list{
+    margin-top:8px; padding-top:10px; border-top:1px dashed var(--border);
+    display:none; flex-direction:column; gap:8px;
+  }
+  .shop-list.open{display:flex;}
+  .shop-row{display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px;}
+  .shop-row .shop-name{font-weight:600;}
+  .shop-row .shop-area{color:var(--muted); font-size:11px; display:block;}
+  .shop-row .price{font-family:var(--font-mono); font-weight:600; color:var(--tag-dark); white-space:nowrap;}
+  .shop-row a.dir{
+    font-size:11px; color:var(--primary); text-decoration:none; border:1px solid var(--primary);
+    border-radius:6px; padding:3px 7px; white-space:nowrap; font-weight:600;
+  }
+  .shop-row a.dir:hover{background:var(--primary); color:#fff;}
+
+  .alt-panel{
+    margin-top:8px; padding-top:10px; border-top:1px dashed var(--border); display:none;
+    flex-direction:column; gap:6px;
+  }
+  .alt-panel.open{display:flex;}
+  .alt-item{
+    display:flex; align-items:center; gap:8px; font-size:12px; background:var(--surface-2);
+    padding:6px 8px; border-radius:8px;
+  }
+  .alt-item .ic{font-size:16px;}
+  .alt-item .name{font-weight:600; flex:1;}
+  .alt-item .reason{color:var(--muted); font-size:10.5px;}
+
+  .empty{
+    text-align:center; padding:60px 20px; color:var(--muted);
+  }
+  .empty .ic{font-size:40px; display:block; margin-bottom:10px;}
+
+  footer{
+    text-align:center; padding:28px 20px 40px; color:var(--muted); font-size:12.5px;
+  }
+
+  /* mobile filter toggle */
+  #filterToggle{display:none;}
+  @media (max-width:860px){
+    main{flex-direction:column;}
+    .filters{
+      width:100%; position:static; display:none;
+    }
+    .filters.open{display:block;}
+    #filterToggle{
+      display:block; width:100%; padding:12px; border-radius:10px; border:1.5px solid var(--border);
+      background:var(--surface); font-weight:600; font-size:13.5px; color:var(--primary-dark); margin-bottom:14px;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Login -->
+  <div id="loginOverlay">
+    <div id="loginCard">
+      <span class="leaf">🌿</span>
+      <h2>Welcome to eatGrow</h2>
+      <p>Nutrition you can afford, near you.</p>
+      <form id="loginForm">
+        <input type="text" id="loginName" placeholder="Your name" required>
+        <input type="email" id="loginEmail" placeholder="Email address" required>
+        <button type="submit">Continue</button>
+      </form>
+      <button id="loginSkip">Skip for now</button>
+    </div>
+  </div>
+
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="mark">🥦</div>
+        <div class="brand-text">
+          <h1>eatGrow</h1>
+          <span>Nutrition you can afford</span>
+        </div>
+      </div>
+      <div class="header-search">
+        <input type="text" id="searchInput" placeholder="Search spinach, banana, protein-rich greens…">
+      </div>
+      <div id="userGreet"></div>
+    </div>
+  </header>
+
+  <main>
+    <button id="filterToggle">☰ Filters</button>
+    <aside class="filters" id="filtersPanel">
+      <h3>Location</h3>
+      <div class="field">
+        <label for="citySelect">City</label>
+        <select id="citySelect">
+          <option value="">All cities</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="areaSelect">Area</label>
+        <select id="areaSelect">
+          <option value="">All areas</option>
+        </select>
+      </div>
+
+      <h3 style="margin-top:22px;">Category</h3>
+      <div class="field">
+        <div class="segmented" id="categorySeg">
+          <button data-cat="all" class="active">All</button>
+          <button data-cat="fruit">Fruits</button>
+          <button data-cat="veg">Veggies</button>
+        </div>
+      </div>
+
+      <h3 style="margin-top:22px;">Budget &amp; nutrition</h3>
+      <div class="field">
+        <label>Price per kg (₹)</label>
+        <div class="range-row">
+          <input type="number" id="priceMin" placeholder="Min" min="0">
+          <span>–</span>
+          <input type="number" id="priceMax" placeholder="Max" min="0">
+        </div>
+      </div>
+      <div class="field">
+        <label>Min protein (g / 100g) — <span class="slider-val" id="proteinVal">0</span></label>
+        <input type="range" id="proteinMin" min="0" max="10" step="0.5" value="0">
+      </div>
+      <div class="field">
+        <label>Max calories (kcal / 100g) — <span class="slider-val" id="calorieVal">300</span></label>
+        <input type="range" id="calorieMax" min="15" max="300" step="5" value="300">
+      </div>
+
+      <button id="resetFilters">Reset all filters</button>
+    </aside>
+
+    <section class="results">
+      <div class="results-head">
+        <h2>Fresh picks near you</h2>
+        <span class="count" id="resultsCount"></span>
+      </div>
+      <div class="grid" id="resultsGrid"></div>
+    </section>
+  </main>
+
+  <footer>
+    eatGrow — helping every household find affordable, nutritious food nearby. Sample data shown for Mumbai, Delhi &amp; Bengaluru.
+  </footer>
+
+<script>
+// ---------------- Data ----------------
+const CITY_AREAS = {
+  "Mumbai": ["Andheri", "Bandra", "Dadar"],
+  "Delhi": ["Connaught Place", "Saket", "Rohini"],
+  "Bengaluru": ["Koramangala", "Indiranagar", "Whitefield"]
+};
+
+const SHOPS = [
+  {id:"s1", name:"Andheri Fresh Mart", city:"Mumbai", area:"Andheri", factor:1.05},
+  {id:"s2", name:"Green Basket Andheri", city:"Mumbai", area:"Andheri", factor:0.95},
+  {id:"s3", name:"Bandra Farm Fresh", city:"Mumbai", area:"Bandra", factor:1.10},
+  {id:"s4", name:"Nature's Basket Bandra", city:"Mumbai", area:"Bandra", factor:1.15},
+  {id:"s5", name:"Dadar Sabzi Mandi", city:"Mumbai", area:"Dadar", factor:0.90},
+  {id:"s6", name:"Dadar Organic Store", city:"Mumbai", area:"Dadar", factor:1.08},
+  {id:"s7", name:"CP Veggie Hub", city:"Delhi", area:"Connaught Place", factor:1.12},
+  {id:"s8", name:"Fresh & Healthy CP", city:"Delhi", area:"Connaught Place", factor:1.05},
+  {id:"s9", name:"Saket Farm Fresh", city:"Delhi", area:"Saket", factor:1.00},
+  {id:"s10", name:"Green Leaf Saket", city:"Delhi", area:"Saket", factor:0.95},
+  {id:"s11", name:"Rohini Sabzi Point", city:"Delhi", area:"Rohini", factor:0.88},
+  {id:"s12", name:"Rohini Organic Bazaar", city:"Delhi", area:"Rohini", factor:1.02},
+  {id:"s13", name:"Koramangala Fresh Foods", city:"Bengaluru", area:"Koramangala", factor:1.10},
+  {id:"s14", name:"Green Cart Koramangala", city:"Bengaluru", area:"Koramangala", factor:1.00},
+  {id:"s15", name:"Indiranagar Organic Store", city:"Bengaluru", area:"Indiranagar", factor:1.15},
+  {id:"s16", name:"Farm Fresh Indiranagar", city:"Bengaluru", area:"Indiranagar", factor:0.98},
+  {id:"s17", name:"Whitefield Veggie Mart", city:"Bengaluru", area:"Whitefield", factor:0.92},
+  {id:"s18", name:"Nature's Basket Whitefield", city:"Bengaluru", area:"Whitefield", factor:1.05}
+];
+
+const ITEMS = [
+  {id:"spinach", name:"Spinach (Palak)", cat:"veg", icon:"🥬", protein:2.9, cal:23, price:30, tag:"Iron & Vitamin A rich", alt:["methi","amaranth"]},
+  {id:"peas", name:"Green Peas (Matar)", cat:"veg", icon:"🫛", protein:5.4, cal:81, price:80, tag:"High protein", alt:["sprouts","drumstick"]},
+  {id:"sprouts", name:"Moong Sprouts", cat:"veg", icon:"🌱", protein:7.0, cal:30, price:60, tag:"High protein, fibre", alt:["peas","drumstick"]},
+  {id:"broccoli", name:"Broccoli", cat:"veg", icon:"🥦", protein:2.8, cal:34, price:120, tag:"Vitamin C rich", alt:["cauliflower","spinach"]},
+  {id:"methi", name:"Fenugreek Leaves (Methi)", cat:"veg", icon:"🌿", protein:4.4, cal:49, price:25, tag:"Iron rich", alt:["spinach","amaranth"]},
+  {id:"amaranth", name:"Amaranth Leaves (Chaulai)", cat:"veg", icon:"🍃", protein:3.5, cal:23, price:20, tag:"Iron & calcium", alt:["spinach","methi"]},
+  {id:"bhindi", name:"Okra (Bhindi)", cat:"veg", icon:"🫛", protein:1.9, cal:33, price:40, tag:"Fibre rich", alt:["cauliflower","tomato"]},
+  {id:"cauliflower", name:"Cauliflower", cat:"veg", icon:"🥦", protein:1.9, cal:25, price:30, tag:"Vitamin C", alt:["broccoli","bhindi"]},
+  {id:"carrot", name:"Carrot", cat:"veg", icon:"🥕", protein:0.9, cal:41, price:35, tag:"Vitamin A rich", alt:["beetroot","sweetpotato"]},
+  {id:"beetroot", name:"Beetroot", cat:"veg", icon:"🥕", protein:1.6, cal:43, price:30, tag:"Folate rich", alt:["carrot","sweetpotato"]},
+  {id:"sweetpotato", name:"Sweet Potato", cat:"veg", icon:"🍠", protein:1.6, cal:86, price:40, tag:"Energy & fibre", alt:["carrot","beetroot"]},
+  {id:"lauki", name:"Bottle Gourd (Lauki)", cat:"veg", icon:"🥒", protein:0.6, cal:15, price:25, tag:"Low calorie", alt:["cauliflower","tomato"]},
+  {id:"drumstick", name:"Drumstick (Moringa)", cat:"veg", icon:"🌿", protein:9.4, cal:64, price:60, tag:"Very high protein", alt:["peas","sprouts"]},
+  {id:"tomato", name:"Tomato", cat:"veg", icon:"🍅", protein:0.9, cal:18, price:30, tag:"Vitamin C, lycopene", alt:["bhindi","lauki"]},
+  {id:"banana", name:"Banana", cat:"fruit", icon:"🍌", protein:1.1, cal:89, price:50, tag:"Potassium rich", alt:["custardapple","jackfruit"]},
+  {id:"guava", name:"Guava", cat:"fruit", icon:"🍈", protein:2.6, cal:68, price:60, tag:"Vitamin C rich", alt:["orange","pomegranate"]},
+  {id:"pomegranate", name:"Pomegranate", cat:"fruit", icon:"🍎", protein:1.7, cal:83, price:150, tag:"Antioxidant rich", alt:["guava","custardapple"]},
+  {id:"apple", name:"Apple", cat:"fruit", icon:"🍎", protein:0.3, cal:52, price:180, tag:"Fibre rich", alt:["papaya","orange"]},
+  {id:"papaya", name:"Papaya", cat:"fruit", icon:"🥭", protein:0.5, cal:43, price:40, tag:"Digestive, vitamin A", alt:["apple","watermelon"]},
+  {id:"orange", name:"Orange", cat:"fruit", icon:"🍊", protein:0.9, cal:47, price:80, tag:"Vitamin C rich", alt:["guava","apple"]},
+  {id:"mango", name:"Mango", cat:"fruit", icon:"🥭", protein:0.8, cal:60, price:100, tag:"Vitamin A rich", alt:["papaya","jackfruit"]},
+  {id:"watermelon", name:"Watermelon", cat:"fruit", icon:"🍉", protein:0.6, cal:30, price:25, tag:"Hydrating, low calorie", alt:["papaya","chikoo"]},
+  {id:"chikoo", name:"Chikoo (Sapota)", cat:"fruit", icon:"🟤", protein:0.4, cal:83, price:70, tag:"Energy dense", alt:["banana","jackfruit"]},
+  {id:"custardapple", name:"Custard Apple (Sitaphal)", cat:"fruit", icon:"🍏", protein:2.1, cal:94, price:120, tag:"High protein fruit", alt:["banana","pomegranate"]},
+  {id:"dates", name:"Dates", cat:"fruit", icon:"🌰", protein:2.5, cal:277, price:300, tag:"Iron & energy dense", alt:["custardapple","chikoo"]},
+  {id:"jackfruit", name:"Jackfruit", cat:"fruit", icon:"🍈", protein:1.7, cal:95, price:50, tag:"Meat-alternative texture", alt:["banana","mango"]}
+];
+
+// ---------------- State ----------------
+let state = {
+  city: "", area: "", cat: "all", search: "",
+  priceMin: null, priceMax: null, proteinMin: 0, calorieMax: 300
+};
+let userName = "";
+
+// ---------------- Login ----------------
+document.getElementById("loginForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  userName = document.getElementById("loginName").value.trim() || "Friend";
+  closeLogin();
+});
+document.getElementById("loginSkip").addEventListener("click", function(){
+  userName = "";
+  closeLogin();
+});
+function closeLogin(){
+  document.getElementById("loginOverlay").style.display = "none";
+  document.getElementById("userGreet").innerHTML = userName ? `Hi, <b>${escapeHtml(userName)}</b> 👋` : "";
+}
+
+// ---------------- Populate city/area ----------------
+const citySelect = document.getElementById("citySelect");
+Object.keys(CITY_AREAS).forEach(c=>{
+  const opt = document.createElement("option");
+  opt.value = c; opt.textContent = c;
+  citySelect.appendChild(opt);
+});
+function refreshAreas(){
+  const areaSelect = document.getElementById("areaSelect");
+  areaSelect.innerHTML = '<option value="">All areas</option>';
+  if(state.city && CITY_AREAS[state.city]){
+    CITY_AREAS[state.city].forEach(a=>{
+      const opt = document.createElement("option");
+      opt.value = a; opt.textContent = a;
+      areaSelect.appendChild(opt);
+    });
+  }
+}
+
+citySelect.addEventListener("change", e=>{
+  state.city = e.target.value; state.area = "";
+  refreshAreas(); render();
+});
+document.getElementById("areaSelect").addEventListener("change", e=>{
+  state.area = e.target.value; render();
+});
+document.getElementById("searchInput").addEventListener("input", e=>{
+  state.search = e.target.value.toLowerCase(); render();
+});
+document.querySelectorAll("#categorySeg button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll("#categorySeg button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    state.cat = btn.dataset.cat; render();
+  });
+});
+document.getElementById("priceMin").addEventListener("input", e=>{
+  state.priceMin = e.target.value === "" ? null : Number(e.target.value); render();
+});
+document.getElementById("priceMax").addEventListener("input", e=>{
+  state.priceMax = e.target.value === "" ? null : Number(e.target.value); render();
+});
+document.getElementById("proteinMin").addEventListener("input", e=>{
+  state.proteinMin = Number(e.target.value);
+  document.getElementById("proteinVal").textContent = state.proteinMin;
+  render();
+});
+document.getElementById("calorieMax").addEventListener("input", e=>{
+  state.calorieMax = Number(e.target.value);
+  document.getElementById("calorieVal").textContent = state.calorieMax;
+  render();
+});
+document.getElementById("resetFilters").addEventListener("click", ()=>{
+  state = {city:"", area:"", cat:"all", search:"", priceMin:null, priceMax:null, proteinMin:0, calorieMax:300};
+  citySelect.value = ""; refreshAreas();
+  document.getElementById("searchInput").value = "";
+  document.querySelectorAll("#categorySeg button").forEach(b=>b.classList.remove("active"));
+  document.querySelector('#categorySeg button[data-cat="all"]').classList.add("active");
+  document.getElementById("priceMin").value = "";
+  document.getElementById("priceMax").value = "";
+  document.getElementById("proteinMin").value = 0;
+  document.getElementById("proteinVal").textContent = "0";
+  document.getElementById("calorieMax").value = 300;
+  document.getElementById("calorieVal").textContent = "300";
+  render();
+});
+document.getElementById("filterToggle").addEventListener("click", ()=>{
+  document.getElementById("filtersPanel").classList.toggle("open");
+});
+
+// ---------------- Helpers ----------------
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function mapsLink(shopName, area, city){
+  const q = encodeURIComponent(`${shopName}, ${area}, ${city}`);
+  return `https://www.google.com/maps/search/?api=1&query=${q}`;
+}
+function matchingShops(item){
+  return SHOPS.filter(s=>{
+    if(state.city && s.city !== state.city) return false;
+    if(state.area && s.area !== state.area) return false;
+    return true;
+  }).map(s=>({...s, price: Math.round(item.price * s.factor)}))
+    .filter(s=>{
+      if(state.priceMin != null && s.price < state.priceMin) return false;
+      if(state.priceMax != null && s.price > state.priceMax) return false;
+      return true;
+    })
+    .sort((a,b)=>a.price-b.price);
+}
+function itemById(id){ return ITEMS.find(i=>i.id===id); }
+
+// ---------------- Render ----------------
+function render(){
+  const grid = document.getElementById("resultsGrid");
+  grid.innerHTML = "";
+
+  const filteredItems = ITEMS.filter(item=>{
+    if(state.cat !== "all" && item.cat !== state.cat) return false;
+    if(state.search && !item.name.toLowerCase().includes(state.search)) return false;
+    if(item.protein < state.proteinMin) return false;
+    if(item.cal > state.calorieMax) return false;
+    return true;
+  }).map(item=>({item, shops: matchingShops(item)}))
+    .filter(({shops})=>{
+      // if a price filter is active, item must have at least one matching shop
+      if(state.priceMin != null || state.priceMax != null) return shops.length > 0;
+      return true;
+    });
+
+  document.getElementById("resultsCount").textContent = filteredItems.length + " item" + (filteredItems.length===1?"":"s") + " found";
+
+  if(filteredItems.length === 0){
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1;">
+      <span class="ic">🍂</span>
+      No matches yet — try widening your price, protein or calorie range.
+    </div>`;
+    return;
+  }
+
+  filteredItems.forEach(({item, shops})=>{
+    const proteinPct = Math.min(100, (item.protein/10)*100);
+    const calPct = Math.min(100, (item.cal/300)*100);
+    const bestPrice = shops.length ? shops[0].price : item.price;
+    const shopCountLabel = (state.city || state.area)
+      ? `Available at <b>${shops.length}</b> shop${shops.length===1?"":"s"} nearby`
+      : `Base price shown — pick a city to see shops`;
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="card-top">
+        <span class="card-icon">${item.icon}</span>
+        <span class="card-cat ${item.cat==='fruit'?'fruit':'veg'}">${item.cat==='fruit'?'Fruit':'Vegetable'}</span>
+      </div>
+      <div>
+        <h3>${item.name}</h3>
+        <div class="tagline">${item.tag}</div>
+      </div>
+      <div class="nutri-strip">
+        <div class="nutri-row">
+          <span class="label">Prot.</span>
+          <div class="nutri-bar protein"><i style="width:${proteinPct}%"></i></div>
+          <span class="val">${item.protein}g</span>
+        </div>
+        <div class="nutri-row">
+          <span class="label">Cal.</span>
+          <div class="nutri-bar cal"><i style="width:${calPct}%"></i></div>
+          <span class="val">${item.cal}kcal</span>
+        </div>
+      </div>
+      <div class="price-tag">
+        <span class="amount">₹${bestPrice}</span><span class="unit"> /kg</span>
+      </div>
+      <div class="avail">${shopCountLabel}</div>
+      <div class="card-actions">
+        <button class="shopsBtn">View shops</button>
+        <button class="altBtn">Alternatives</button>
+      </div>
+      <div class="shop-list"></div>
+      <div class="alt-panel"></div>
+    `;
+
+    // shops
+    const shopListEl = card.querySelector(".shop-list");
+    if(shops.length){
+      shopListEl.innerHTML = shops.map(s=>`
+        <div class="shop-row">
+          <div>
+            <span class="shop-name">${escapeHtml(s.name)}</span>
+            <span class="shop-area">${escapeHtml(s.area)}, ${escapeHtml(s.city)}</span>
+          </div>
+          <span class="price">₹${s.price}</span>
+          <a class="dir" target="_blank" rel="noopener" href="${mapsLink(s.name, s.area, s.city)}">Directions</a>
+        </div>
+      `).join("");
+    } else {
+      shopListEl.innerHTML = `<div class="avail">No shops match your current city/area/price filters for this item.</div>`;
+    }
+    card.querySelector(".shopsBtn").addEventListener("click", ()=>{
+      shopListEl.classList.toggle("open");
+      card.querySelector(".alt-panel").classList.remove("open");
+    });
+
+    // alternatives
+    const altEl = card.querySelector(".alt-panel");
+    const alts = (item.alt || []).map(itemById).filter(Boolean);
+    altEl.innerHTML = alts.length
+      ? alts.map(a=>`
+        <div class="alt-item">
+          <span class="ic">${a.icon}</span>
+          <span class="name">${a.name}</span>
+          <span class="reason">${a.protein}g protein · ${a.cal}kcal · ₹${a.price}/kg</span>
+        </div>`).join("")
+      : `<div class="avail">No close alternatives listed for this item.</div>`;
+    card.querySelector(".altBtn").addEventListener("click", ()=>{
+      altEl.classList.toggle("open");
+      shopListEl.classList.remove("open");
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+render();
+</script>
+</body>
+</html>
